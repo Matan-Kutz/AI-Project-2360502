@@ -1,6 +1,6 @@
-def createParameters(width, length, pieces):
+def createGlobalFeatures(width, length, pieces):
     """
-    Create parameters for a game board and its pieces.
+    Create features for a game board and its pieces.
     
     Args:
         width (int): The width of the game board
@@ -68,7 +68,7 @@ def createParameters(width, length, pieces):
             'spread': spread
         }
     
-    parameters = {
+    features = {
         'board_dimensions': {
             'width': width,
             'length': length
@@ -91,4 +91,4 @@ def createParameters(width, length, pieces):
             }
         }
     }
-    return parameters 
+    return features 
