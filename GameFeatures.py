@@ -136,6 +136,36 @@ class GameFeatures:
         winning_moves = []  # List to store features for each winning move
         captured_pieces = {1: [], 2: []}  # Track captured pieces for each player
         
+        def calculate_piece_stats(positions):
+            """Calculate statistics for a set of piece positions"""
+            if not positions:
+                return {
+                    'count': 0,
+                    'avg_x': 0,
+                    'avg_y': 0,
+                    'spread': 0
+                }
+            
+            x_coords = [pos[0] for pos in positions]
+            y_coords = [pos[1] for pos in positions]
+            
+            avg_x = sum(x_coords) / len(x_coords)
+            avg_y = sum(y_coords) / len(y_coords)
+            
+            # Calculate spread (average distance from center)
+            max_x = max(x for x, _ in board_state.keys())
+            max_y = max(y for _, y in board_state.keys())
+            center_x = max_x / 2
+            center_y = max_y / 2
+            spread = sum(((x - center_x) ** 2 + (y - center_y) ** 2) ** 0.5 for x, y in positions) / len(positions)
+            
+            return {
+                'count': len(positions),
+                'avg_x': avg_x,
+                'avg_y': avg_y,
+                'spread': spread
+            }
+        
         for line in lines[1:]:  # Skip first line (winner)
             line = line.strip()
             if not line:
@@ -195,10 +225,57 @@ class GameFeatures:
                     # Add captured pieces
                     piece_positions['player']['captured'] = captured_pieces[winning_player]
                     piece_positions['enemy']['captured'] = captured_pieces[3 - winning_player]  # Other player
+                    
+                    # Calculate line and column counts
+                    max_x = max(x for x, _ in board_state.keys())
+                    max_y = max(y for _, y in board_state.keys())
+                    line_counts = {'player': [0] * (max_y + 1), 'enemy': [0] * (max_y + 1)}
+                    column_counts = {'player': [0] * (max_x + 1), 'enemy': [0] * (max_x + 1)}
+                    
+                    for (pos_x, pos_y), pieces in board_state.items():
+                        for piece in pieces:
+                            if piece['player'] == winning_player:
+                                line_counts['player'][pos_y] += 1
+                                column_counts['player'][pos_x] += 1
+                            else:
+                                line_counts['enemy'][pos_y] += 1
+                                column_counts['enemy'][pos_x] += 1
+                    
+                    # Calculate piece statistics
+                    piece_statistics = {
+                        'player': {
+                            'on_board': calculate_piece_stats(piece_positions['player']['on_board']),
+                            'not_on_board': len(piece_positions['player']['not_on_board']),
+                            'captured': len(piece_positions['player']['captured'])
+                        },
+                        'enemy': {
+                            'on_board': calculate_piece_stats(piece_positions['enemy']['on_board']),
+                            'not_on_board': len(piece_positions['enemy']['not_on_board']),
+                            'captured': len(piece_positions['enemy']['captured'])
+                        }
+                    }
                                 
                     move_features.append({
                         'name': 'piece_positions',
                         'value': piece_positions,
+                        'type': 'global'
+                    })
+                    
+                    move_features.append({
+                        'name': 'line_counts',
+                        'value': line_counts,
+                        'type': 'global'
+                    })
+                    
+                    move_features.append({
+                        'name': 'column_counts',
+                        'value': column_counts,
+                        'type': 'global'
+                    })
+                    
+                    move_features.append({
+                        'name': 'piece_statistics',
+                        'value': piece_statistics,
                         'type': 'global'
                     })
                     
