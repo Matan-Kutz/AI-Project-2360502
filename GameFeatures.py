@@ -233,9 +233,6 @@ class GameFeatures:
         - amount of small pieces captured
         - amount of medium pieces captured
         - amount of large pieces captured
-        - amount of small pieces not on the board
-        - amount of medium pieces not on the board
-        - amount of large pieces not on the board
         - amount of small opponent pieces on the board
         - amount of medium opponent pieces on the board
         - amount of large opponent pieces on the board
@@ -319,20 +316,6 @@ class GameFeatures:
                 player_pieces_captured['S'],
                 player_pieces_captured['M'],
                 player_pieces_captured['L']
-            ])
-            
-            # Calculate pieces not on board (total pieces - on board - captured)
-            player_pieces_not_on_board = {
-                'S': self.PIECES['S'] - player_pieces_on_board['S'] - player_pieces_captured['S'],
-                'M': self.PIECES['M'] - player_pieces_on_board['M'] - player_pieces_captured['M'],
-                'L': self.PIECES['L'] - player_pieces_on_board['L'] - player_pieces_captured['L']
-            }
-            
-            # Add player piece counts not on board
-            feature_list.extend([
-                player_pieces_not_on_board['S'],
-                player_pieces_not_on_board['M'],
-                player_pieces_not_on_board['L']
             ])
             
             # Extract piece counts by size for enemy
