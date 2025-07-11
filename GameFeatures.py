@@ -138,9 +138,9 @@ class GameFeatures:
         if not first_line.startswith('winner:'):
             raise ValueError("First line must specify the winner in format 'winner:[player_id]'")
             
-        winning_player = int(first_line.split(':')[1])
-        if winning_player not in [1, 2]:
-            raise ValueError("Winner player_id must be 1 or 2")
+        winning_player = int(first_line.split(':')[1]) - 1
+        if winning_player not in [0, 1]:
+            raise ValueError("Winner player_id must be 0 or 1")
             
         # Parse the transcript
         board_state = {}  # Dictionary to store current board state
@@ -202,7 +202,7 @@ class GameFeatures:
                 
             # After reading all lines, check if the last turn was complete and was the winning player's move
             if current_turn > 0 and positions_read_for_turn == total_positions:
-                current_player = 1 if current_turn % 2 == 1 else 2
+                current_player = 0 if current_turn % 2 == 1 else 1
                 if current_player == winning_player:
                     # Generate features for this move using the Processing class
                     move_features = Processing.process_game_state(
