@@ -4,11 +4,7 @@ from GameFeatures import GameFeatures
 import os
 
 
-def check_if_log_exists(log_file):
-    if not os.path.exists(log_file):
-        print(f"Error: {log_file} not found in the current directory.")
-        print("Please create a log.txt file with game transcript data.")
-        exit(1)
+
 
 
 def create_game_features():
@@ -22,31 +18,48 @@ def create_game_features():
 
 def read_game_transcript(game_features, log_file):
     print(f"Reading game transcript from {log_file}...")
-    moves = game_features.read_game_transcript(log_file)
-    print(f"Found {len(moves)} winning moves in the transcript.")
+    moves_dict = game_features.read_game_transcript(log_file)
+    winner_moves = moves_dict['winner_moves']
+    loser_moves = moves_dict['loser_moves']
+    print(f"Found {len(winner_moves)} winner moves and {len(loser_moves)} loser moves in the transcript.")
     print()
 
-    if not moves:
+    if not winner_moves and not loser_moves:
         print("No moves found in the transcript.")
         return
 
-    return moves
+    return moves_dict
 
 
-def create_feature_list(game_features, moves):
+def create_feature_list(game_features, moves_dict):
     print("Creating feature lists...")
-    feature_lists = game_features.create_feature_lists(moves)
-    print(f"Created {len(feature_lists)} feature lists.")
+    feature_dict = game_features.create_feature_lists(moves_dict)
+    winner_features = feature_dict['winner_features']
+    loser_features = feature_dict['loser_features']
+    print(f"Created {len(winner_features)} winner feature lists and {len(loser_features)} loser feature lists.")
     print()
-    return feature_lists
+    return feature_dict
 
 
-def print_features(feature_lists):
+def print_features(feature_dict):
+    winner_features = feature_dict['winner_features']
+    loser_features = feature_dict['loser_features']
+    
     print("Feature Lists Results:")
     print("-" * 40)
-
-    for i, feature_list in enumerate(feature_lists):
-        print(f"Move {i + 1} (Turn {i * 2 + 1}):")
+    
+    print("Winner Moves:")
+    print("-" * 20)
+    for i, feature_list in enumerate(winner_features):
+        print(f"Winner Move {i + 1}:")
+        print(f"  Number of features: {len(feature_list)}")
+        print(f"  Features: {feature_list}")
+        print()
+    
+    print("Loser Moves:")
+    print("-" * 20)
+    for i, feature_list in enumerate(loser_features):
+        print(f"Loser Move {i + 1}:")
         print(f"  Number of features: {len(feature_list)}")
         print(f"  Features: {feature_list}")
         print()
@@ -56,33 +69,71 @@ def print_features_summary():
     print("Feature Summary:")
     print("-" * 40)
     print("Feature order:")
-    print("1-3:   Column counts (1, 2, 3)")
-    print("4-6:   Line counts (1, 2, 3)")
-    print("7-9:   Player pieces on board (S, M, L)")
-    print("10-12: Player pieces captured (S, M, L)")
-    print("13-15: Enemy pieces on board (S, M, L)")
-    print("16-18: Enemy pieces captured (S, M, L)")
-    print("19:    Player average X location")
-    print("20:    Player average Y location")
-    print("21:    Player spread")
-    print("22:    Total pieces on board")
-    print("23-25: Game progress (1-hot encoded)")
+    print("0-2:   Column counts (1, 2, 3)")
+    print("3-5:   Line counts (1, 2, 3)")
+    print("6-8:   Player pieces on board (S, M, L)")
+    print("9-11: Player pieces captured (S, M, L)")
+    print("12-14: Enemy pieces on board (S, M, L)")
+    print("15-17: Enemy pieces captured (S, M, L)")
+    print("18:    Player average X location")
+    print("19:    Player average Y location")
+    print("20:    Player spread")
+    print("21:    Total pieces on board")
+    print("22-24: Game progress (1-hot encoded)")
 
 
 def main():
     print("GameFeatures Testing System")
     print("=" * 40)
 
-    # Check if log.txt exists
-    log_file = "log.txt"
-    check_if_log_exists(log_file)
+    # Get log directory from user or use default
+    import sys
+    if len(sys.argv) > 1:
+        log_directory = sys.argv[1]
+    else:
+        log_directory = "."  # Current directory
+    
+    # Check if directory exists
+    if not os.path.exists(log_directory):
+        print(f"Error: Directory '{log_directory}' not found.")
+        print("Usage: python main.py [log_directory]")
+        print("If no directory is specified, the current directory will be used.")
+        return
 
     try:
         game_features = create_game_features()
-        moves = read_game_transcript(game_features, log_file)
-        feature_lists = create_feature_list(game_features, moves)
-        print_features(feature_lists)
-        print_features_summary()
+        
+        # Find all log files in the directory
+        log_files = []
+        log_number = 0
+        
+        while True:
+            log_filename = f"log {log_number}"
+            log_path = os.path.join(log_directory, log_filename)
+            
+            if os.path.exists(log_path):
+                log_files.append(log_path)
+                log_number += 1
+            else:
+                break
+        
+        if not log_files:
+            print(f"No log files found in directory: {log_directory}")
+            return
+        
+        print(f"Found {len(log_files)} log files: {log_files}")
+        print()
+        
+        # Process each log file
+        for log_file in log_files:
+            print(f"Processing {log_file}...")
+            moves_dict = read_game_transcript(game_features, log_file)
+            if moves_dict:
+                feature_dict = create_feature_list(game_features, moves_dict)
+                print_features(feature_dict)
+                print_features_summary()
+            print("-" * 60)
+            print()
 
     except Exception as e:
         print(f"Error: {e}")
