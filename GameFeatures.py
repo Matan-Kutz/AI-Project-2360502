@@ -55,7 +55,7 @@ class GameFeatures:
         board_state = {}  # Dictionary to store current board state
         current_turn = 0
         winner_moves = []  # List to store features for each winning player's move
-        loser_moves = []   # List to store features for each losing player's move
+        loser_moves = []  # List to store features for each losing player's move
         captured_pieces = {'player': [], 'enemy': []}  # Track captured pieces for each player
         positions_read_for_turn = 0  # Track how many positions we've read for current turn
         total_positions = self.width * self.length  # Total positions on the board
@@ -113,7 +113,7 @@ class GameFeatures:
             # After reading all lines, check if the last turn was complete
             if current_turn > 0 and positions_read_for_turn == total_positions:
                 current_player = 0 if current_turn % 2 == 1 else 1
-                
+
                 # Generate features for this move using the Processing class
                 # For winner's moves, use winning_player as the perspective
                 if current_player == winning_player:
@@ -157,8 +157,8 @@ class GameFeatures:
 
     @staticmethod
     def extract_piece_count(move_features, feature_list):
-        player_on_board, player_captured = GameFeatures.get_piece_counts(move_features, 'player') # get player info
-        enemy_on_board, enemy_captured = GameFeatures.get_piece_counts(move_features, 'enemy') # get enemy info
+        player_on_board, player_captured = GameFeatures.get_piece_counts(move_features, 'player')  # get player info
+        enemy_on_board, enemy_captured = GameFeatures.get_piece_counts(move_features, 'enemy')  # get enemy info
 
         # Use your own naming when extending the feature list
         feature_list.extend([
@@ -190,6 +190,30 @@ class GameFeatures:
 
         feature_list.extend(game_progress)
 
+    def process_moves(self, moves, max_turns, user_feature_list):
+        for move_features in moves:
+            feature_list = []
+            self.extract_counts_row_column(move_features, feature_list, 'column_counts')  # extract columns count
+            self.extract_counts_row_column(move_features, feature_list, 'line_counts')  # extract rows count
+            # extract pieces on board, player and enemy
+            player_pieces_on_board, enemy_pieces_on_board = self.extract_piece_count(move_features, feature_list)
+
+            # extract avg_x, avg_y and spread
+            values = {'player_avg_x': 0, 'player_avg_y': 0, 'player_spread': 0}
+            for feature in move_features:
+                name = feature['name']
+                if name in values:
+                    values[name] = feature['value']
+
+            feature_list.extend([values['player_avg_x'], values['player_avg_y'], values['player_spread']])
+
+            total_pieces_on_board = sum(player_pieces_on_board.values()) + sum(enemy_pieces_on_board.values())
+            feature_list.append(total_pieces_on_board)
+
+            # Add 1-hot encoded game progress
+            GameFeatures.add_hot_vector(move_features, feature_list, max_turns)
+            user_feature_list.append(feature_list)
+
     def create_feature_lists(self, moves_dict):
         winner_feature_lists = []
         loser_feature_lists = []
@@ -199,64 +223,31 @@ class GameFeatures:
 
         # Calculate maximum turns from the total number of moves
         total_moves = len(winner_moves) + len(loser_moves)
-        max_turns = total_moves * 2
+        max_turns = total_moves * 2  # TODO: Check why x2?
 
         # Process winner moves
-        for move_features in winner_moves:
-            feature_list = []
-            self.extract_counts_row_column(move_features, feature_list, 'column_counts')  # extract columns count
-            self.extract_counts_row_column(move_features, feature_list, 'row_counts')  # extract rows count
-            # extract pieces on board, player and enemy
-            player_pieces_on_board, enemy_pieces_on_board = self.extract_piece_count(move_features, feature_list)
-
-            # extract avg_x, avg_y and spread
-            values = {'player_avg_x': 0, 'player_avg_y': 0, 'player_spread': 0}
-            for feature in move_features:
-                name = feature['name']
-                if name in values:
-                    values[name] = feature['value']
-
-            feature_list.extend([values['player_avg_x'], values['player_avg_y'], values['player_spread']])
-
-            # Add location of each piece on the board
-            # This would need to be extracted from the board state
-            # For now, we'll add a placeholder - this would need the actual board state
-            # We can add the total number of pieces on board as a proxy
-            # TODO: Ask Matan
-            total_pieces_on_board = sum(player_pieces_on_board.values())
-            feature_list.append(total_pieces_on_board)
-
-            # Add 1-hot encoded game progress
-            GameFeatures.add_hot_vector(move_features, feature_list, max_turns)
-            winner_feature_lists.append(feature_list)
-
-        # Process loser moves
-        for move_features in loser_moves:
-            feature_list = []
-            self.extract_counts_row_column(move_features, feature_list, 'column_counts')  # extract columns count
-            self.extract_counts_row_column(move_features, feature_list, 'row_counts')  # extract rows count
-            # extract pieces on board, player and enemy
-            player_pieces_on_board, enemy_pieces_on_board = self.extract_piece_count(move_features, feature_list)
-
-            # extract avg_x, avg_y and spread
-            values = {'player_avg_x': 0, 'player_avg_y': 0, 'player_spread': 0}
-            for feature in move_features:
-                name = feature['name']
-                if name in values:
-                    values[name] = feature['value']
-
-            feature_list.extend([values['player_avg_x'], values['player_avg_y'], values['player_spread']])
-
-            # Add location of each piece on the board
-            # This would need to be extracted from the board state
-            # For now, we'll add a placeholder - this would need the actual board state
-            # We can add the total number of pieces on board as a proxy
-            # TODO: Ask Matan
-            total_pieces_on_board = sum(player_pieces_on_board.values())
-            feature_list.append(total_pieces_on_board)
-
-            # Add 1-hot encoded game progress
-            GameFeatures.add_hot_vector(move_features, feature_list, max_turns)
-            loser_feature_lists.append(feature_list)
+        self.process_moves(winner_moves, max_turns, winner_feature_lists)
+        self.process_moves(loser_moves, max_turns, loser_feature_lists)
 
         return {'winner_features': winner_feature_lists, 'loser_features': loser_feature_lists}
+
+    def get_stage_heuristics(self, board_state, captured_pieces, current_turn, player, max_turns):
+        # Calculate game progress
+        progress = current_turn / max_turns
+        if progress <= 0.33:
+            stage = "early"
+        elif progress <= 0.66:
+            stage = "mid"
+        else:
+            stage = "late"
+
+        # Extract features
+        features = Processing.process_game_state(
+            board_state, captured_pieces, current_turn,
+            player, self.BOARD_WIDTH, self.BOARD_LENGTH
+        )
+        feature_vector = self.create_feature_lists(
+            {"winner_moves": [features]}
+        )["winner_features"][0]
+
+        return stage, feature_vector

@@ -4,9 +4,6 @@ from GameFeatures import GameFeatures
 import os
 
 
-
-
-
 def create_game_features():
     print("Creating GameFeatures object...")
     game_features = GameFeatures()
@@ -44,10 +41,10 @@ def create_feature_list(game_features, moves_dict):
 def print_features(feature_dict):
     winner_features = feature_dict['winner_features']
     loser_features = feature_dict['loser_features']
-    
+
     print("Feature Lists Results:")
     print("-" * 40)
-    
+
     print("Winner Moves:")
     print("-" * 20)
     for i, feature_list in enumerate(winner_features):
@@ -55,7 +52,7 @@ def print_features(feature_dict):
         print(f"  Number of features: {len(feature_list)}")
         print(f"  Features: {feature_list}")
         print()
-    
+
     print("Loser Moves:")
     print("-" * 20)
     for i, feature_list in enumerate(loser_features):
@@ -92,7 +89,7 @@ def main():
         log_directory = sys.argv[1]
     else:
         log_directory = "."  # Current directory
-    
+
     # Check if directory exists
     if not os.path.exists(log_directory):
         print(f"Error: Directory '{log_directory}' not found.")
@@ -102,28 +99,28 @@ def main():
 
     try:
         game_features = create_game_features()
-        
+
         # Find all log files in the directory
         log_files = []
         log_number = 0
-        
+
         while True:
             log_filename = f"log {log_number}"
             log_path = os.path.join(log_directory, log_filename)
-            
+
             if os.path.exists(log_path):
                 log_files.append(log_path)
                 log_number += 1
             else:
                 break
-        
+
         if not log_files:
             print(f"No log files found in directory: {log_directory}")
             return
-        
+
         print(f"Found {len(log_files)} log files: {log_files}")
         print()
-        
+
         # Process each log file
         for log_file in log_files:
             print(f"Processing {log_file}...")
