@@ -3,6 +3,13 @@
 from GameFeatures import GameFeatures
 import os
 
+'''
+*****************************************************************************
+* CREATE_GAME_FEATURES:
+* Initalize a game feature object
+***************************************************************************** 
+'''
+
 
 def create_game_features():
     print("Creating GameFeatures object...")
@@ -11,6 +18,14 @@ def create_game_features():
     print(f"Pieces: {game_features.PIECES}")
     print()
     return game_features
+
+
+'''
+*****************************************************************************
+* READ_GAME_TRANSCRIPT:
+* Used to read a game log file 
+***************************************************************************** 
+'''
 
 
 def read_game_transcript(game_features, log_file):
@@ -28,6 +43,14 @@ def read_game_transcript(game_features, log_file):
     return moves_dict
 
 
+'''
+*****************************************************************************
+* CREATE_FEATURE_LIST:
+* Create a feature list, later to be used in the network
+***************************************************************************** 
+'''
+
+
 def create_feature_list(game_features, moves_dict):
     print("Creating feature lists...")
     feature_dict = game_features.create_feature_lists(moves_dict)
@@ -36,6 +59,14 @@ def create_feature_list(game_features, moves_dict):
     print(f"Created {len(winner_features)} winner feature lists and {len(loser_features)} loser feature lists.")
     print()
     return feature_dict
+
+
+'''
+*****************************************************************************
+* PRINT_FEATURES:
+* Prints the feature dictionary as parsed from the log states
+***************************************************************************** 
+'''
 
 
 def print_features(feature_dict):
@@ -60,6 +91,14 @@ def print_features(feature_dict):
         print(f"  Number of features: {len(feature_list)}")
         print(f"  Features: {feature_list}")
         print()
+
+
+'''
+*****************************************************************************
+* PRINT_FEATURES_SUMMARY:
+* Helper function, used to help the features and their indices
+***************************************************************************** 
+'''
 
 
 def print_features_summary():

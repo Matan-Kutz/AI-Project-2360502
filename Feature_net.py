@@ -10,31 +10,36 @@ class FiLMLayer(nn.Module):
         self.gamma_net = nn.Linear(condition_size, feature_size)
         self.beta_net = nn.Linear(condition_size, feature_size)
 
+    '''
+    *****************************************************************************
+    * x: (batch_size, feature_size)
+    * condition: (batch_size, condition_size) - one-hot encoded vector
+    * Apply feature-wise linear modulation: gamma * x + beta
+    ***************************************************************************** 
+    '''
+
     def forward(self, x, condition):
-        # x: (batch_size, feature_size)
-        # condition: (batch_size, condition_size) - one-hot encoded vector
         condition = condition.float()
         gamma = self.gamma_net(condition)  # (batch_size, feature_size)
         beta = self.beta_net(condition)  # (batch_size, feature_size)
-
-        # Apply feature-wise linear modulation: gamma * x + beta
         return gamma * x + beta
 
 
 class FeatureNet(nn.Module):
+
+    # *****************************************************************************
+    # Total of 22 features
+    # Hidden layer : 120 nodes, each connected to 2 features
+    # *****************************************************************************
+
     def __init__(self):
         super(FeatureNet, self).__init__()
-        # Input: features 1-22
         self.input_size = 22
-        # Hidden layer: 120 nodes, each connected to 2 features
         self.hidden_size = 120
-        # Output: placeholder for now
-        self.output_size = 1  # This can be changed as needed
+        self.output_size = 1
 
-        # Define the connections for the first hidden layer
-        # Each node connects to one feature from 1-6 or 19-22, and one from 7-18
-        self.group1_indices = list(range(0, 6)) + list(range(18, 22))  # 1-6, 19-22 (0-based), location features
-        self.group2_indices = list(range(6, 18))  # 7-18 (0-based), number features
+        self.group1_indices = list(range(0, 6)) + list(range(18, 22))  # location features
+        self.group2_indices = list(range(6, 18))  # number features
 
         # Precompute all possible pairs
         self.pairs = []
@@ -52,30 +57,25 @@ class FeatureNet(nn.Module):
         # Output layer (for now, just a placeholder)
         self.output = nn.Linear(self.hidden_size, self.output_size)
 
+    # *****************************************************************************
+    # x: (batch_size, 22)
+    # Split input into features and condition
+    # *****************************************************************************
     def forward(self, x):
-        # x: (batch_size, 22)
-        # Split input into features and condition
-        features = x[:, :22]  # features 0-21
-        condition = x[:, 22:]  # features 22-24 - one-hot encoded
+        features = x[:, :22]
+        condition = x[:, 22:]
 
         # Build the hidden layer activations
         h = []
         for idx, (i, j) in enumerate(self.pairs):
-            # For each hidden node, get its two input features
             xi = features[:, i]
             xj = features[:, j]
-            # Weighted sum + bias
             hi = self.hidden_weights[idx, 0] * xi + self.hidden_weights[idx, 1] * xj + self.hidden_bias[idx]
             h.append(hi)
-        h = torch.stack(h, dim=1)  # (batch_size, hidden_size)
+        h = torch.stack(h, dim=1)
+        h = self.film(h, condition)  # Apply FiLM modulation
+        h = F.relu(h)  # Apply activation func
 
-        # Apply FiLM modulation
-        h = self.film(h, condition)
-
-        # Apply activation function
-        h = F.relu(h)
-
-        # Output layer
         out = self.output(h)
         return out
 

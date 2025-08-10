@@ -22,6 +22,13 @@ class Processing:
         column_counts = {'player': [0] * width, 'enemy': [0] * width}
         return line_counts, column_counts
 
+    '''
+    *****************************************************************************
+    * UPDATE_PIECES_ON_BOARD:
+    * Updates the pieces positions to the current state
+    ***************************************************************************** 
+    '''
+
     @staticmethod
     def update_pieces_on_board(board_state, winning_player, piece_positions):
         # Track pieces by size on the board
@@ -33,6 +40,13 @@ class Processing:
                 else:
                     piece_positions['enemy'][piece_type]['on_board'].append((pos_x, pos_y))
 
+    '''
+    *****************************************************************************
+    * UPDATE_ROW_COLUMN_COUNTS:
+    * Updates the current count for each row and column
+    ***************************************************************************** 
+    '''
+
     @staticmethod
     def update_row_column_counts(board_state, winning_player, line_counts, column_counts):
         for (pos_x, pos_y), pieces in board_state.items():
@@ -43,6 +57,13 @@ class Processing:
                 else:
                     line_counts['enemy'][pos_y] += 1
                     column_counts['enemy'][pos_x] += 1
+
+    '''
+    *****************************************************************************
+    * GET_AVERAGE_COORDINATES_AND_SPREAD:
+    * Used to update the relevant features in the features list
+    ***************************************************************************** 
+    '''
 
     @staticmethod
     def get_average_coordinates_and_spread(piece_positions, width, length):
@@ -65,6 +86,13 @@ class Processing:
             spread = 0
 
         return avg_x, avg_y, spread
+
+    '''
+    *****************************************************************************
+    * GET_POSITION_FEATURES:
+    * Returns the position based features - for both player and enemy
+    ***************************************************************************** 
+    '''
 
     @staticmethod
     def get_position_features(line_counts, column_counts, piece_positions, avg_x, avg_y, spread, current_turn):
@@ -99,6 +127,13 @@ class Processing:
             {'name': 'current_turn', 'value': current_turn}
         ])
         return move_features
+
+    '''
+    *****************************************************************************
+    * PROCESS_GAME_STATE:
+    * Process a single state
+    ***************************************************************************** 
+    '''
 
     @staticmethod
     def process_game_state(board_state, captured_pieces, current_turn, winning_player, width, length):
